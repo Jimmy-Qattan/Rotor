@@ -54,7 +54,7 @@ class Rotor {
         int getFinalGrace() const;
         int getCurrentGrace() const;
         void beginGrace(); // Essentially tells servo to test for a bit of time
-        void addValue(float value); // Writes value to the servo
+        void addValue(float value, int speed); // Writes value to the servo
         float determineDifferential();
         void STOP();
         void RESUME();
