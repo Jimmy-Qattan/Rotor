@@ -306,4 +306,12 @@ class Rotor {
             
             addValue(stepSize);
         }
+
+        ~Rotor() {
+            if (INITIALIZED) {
+                NUM_OF_WORKING_SERVOS--;
+            } else {
+                NUM_OF_SERVOS--;
+            };
+        };
 };
