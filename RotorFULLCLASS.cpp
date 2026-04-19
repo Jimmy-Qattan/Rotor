@@ -9,6 +9,10 @@ class Rotor {
     bool GRACE_STOP = false;
     int SPEED = 1000; // Determined as Time
     
+    bool hasCue = false;
+    float CUE;
+    int CUESPEED;
+    
     int currentGrace = 0;
     int finalGrace = 1000;
     
@@ -26,7 +30,7 @@ class Rotor {
             
             POSITION = (float)(SERVO.read());
             FINALPOSITION = POSITION;
-            
+
             NUM_OF_WORKING_SERVOS++;
         };
         
@@ -120,8 +124,15 @@ class Rotor {
         };
         
         float determineDifferential() {
-            if (abs(FINALPOSITION - POSITION) <= 0.01) beginGrace();
-            
+            if (abs(FINALPOSITION - POSITION) <= 0.01) {
+                if (hasCue) {
+                    writeSpeed(CUE, CUESPEED);
+                    removeCue();
+                }
+            }
+            else {
+                beginGrace();
+            }
             return ((FINALPOSITION - POSITION) / SPEED);
         }
         
@@ -135,10 +146,37 @@ class Rotor {
             FORCED_STOP = false;
         }
         
-        // Real real fun stuff
+        void createCue(float value, int speed) {
+            if (hasCue) return;
+            
+            hasCue = true;
+            CUE = value;
+            CUESPEED = speed;
+        }
         
-        void writeSpeed(float value) {
+        void removeCue() {
+            if (!hasCue) return;
+            
+            hasCue = false;
+            CUE = 0.0f;
+            CUESPEED = 0;
+        }
+        
+        void executeCue() {
+            if (!hasCue || inMotion) return;
+            
+            writeSpeed(CUE, CUESPEED);
+            removeCue();
+        }
+        
+        void writeSpeed(float value, int speed) {
+            if (inMotion) {
+                createCue(value, speed);
+                return;
+            };
+            
             FINALPOSITION = value;
+            SPEED = speed;
         }
         
         void tick() {
@@ -151,7 +189,7 @@ class Rotor {
                 setCurrentGrace(finalGrace);
             }
             
-            if (POSITION == FINALPOSITION) {
+            if (FINALPOSITION - POSITION <= 0.01) {
                 inMotion = false;
             }
             
