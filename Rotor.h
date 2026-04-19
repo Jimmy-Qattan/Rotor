@@ -9,7 +9,7 @@ class Rotor {
     bool GRACE_STOP = false;
     int SPEED = 1000; // Determined as Time
     
-    int currentGrace = 0;
+    int currentGrace = 0; // Grace period refers to the amount of time after a movement in which the servo "rests"
     int finalGrace = 1000;
     
     float FINALPOSITION;
@@ -48,16 +48,16 @@ class Rotor {
         void setName(String name);
         String getName() const;
         void setSpeed(int speed); // Setting the time it will take to arrive at positions via "writeSpeed"
-        int getSpeed() const; // CHANGED TO GETSPEED FIX THE OTHER FILE ASAP
-        void setFinalGrace(int value);
+        int getSpeed() const;
+        void setFinalGrace(int value); 
         void setCurrentGrace(int value);
         int getFinalGrace() const;
         int getCurrentGrace() const;
-        void beginGrace();
-        void addValue(float value);
+        void beginGrace(); // Essentially tells servo to test for a bit of time
+        void addValue(float value); // Writes value to the servo
         float determineDifferential();
         void STOP();
         void RESUME();
-        void writeSpeed(float value);
-        void tick();
+        void writeSpeed(float value); // User uses this to write values to the servo
+        void tick(); // MANDATORY FOR CONSTANT UPDATES
 };
