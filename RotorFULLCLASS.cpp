@@ -84,7 +84,7 @@ class Rotor {
             SPEED = speed;
         }
         
-        int getSpeech() const {
+        int getSpeed() const {
             return SPEED;
         }
         
