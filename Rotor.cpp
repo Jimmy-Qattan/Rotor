@@ -1,5 +1,3 @@
-#include "Rotor.h"
-
 int Rotor::pin() const {
     return (int)PIN;
 };
@@ -39,7 +37,7 @@ void Rotor::setSpeed(int speed) {
     SPEED = speed;
 }
 
-int Rotor::getSpeed() const {
+int Rotor::getSpeech() const {
     return SPEED;
 }
 
@@ -79,8 +77,15 @@ void Rotor::addValue(float value) {
 };
 
 float Rotor::determineDifferential() {
-    if (abs(FINALPOSITION - POSITION) <= 0.01) beginGrace();
-    
+    if (abs(FINALPOSITION - POSITION) <= 0.01) {
+        if (hasCue) {
+            writeSpeed(CUE, CUESPEED);
+            removeCue();
+        }
+    }
+    else {
+        beginGrace();
+    }
     return ((FINALPOSITION - POSITION) / SPEED);
 }
 
@@ -94,9 +99,35 @@ void Rotor::RESUME() {
     FORCED_STOP = false;
 }
 
-// Real real fun stuff
+void Rotor::createCue(float value, int speed) {
+    if (hasCue) return;
+    
+    hasCue = true;
+    CUE = value;
+    CUESPEED = speed;
+}
 
-void Rotor::writeSpeed(float value, int speed = SPEED) {
+void Rotor::removeCue() {
+    if (!hasCue) return;
+    
+    hasCue = false;
+    CUE = 0.0f;
+    CUESPEED = 0;
+}
+
+void Rotor::executeCue() {
+    if (!hasCue || inMotion) return;
+    
+    writeSpeed(CUE, CUESPEED);
+    removeCue();
+}
+
+void Rotor::writeSpeed(float value, int speed) {
+    if (inMotion) {
+        createCue(value, speed);
+        return;
+    };
+    
     FINALPOSITION = value;
     SPEED = speed;
 }
@@ -111,7 +142,7 @@ void Rotor::tick() {
         setCurrentGrace(finalGrace);
     }
     
-    if (POSITION == FINALPOSITION) {
+    if (FINALPOSITION - POSITION <= 0.01) {
         inMotion = false;
     }
     
