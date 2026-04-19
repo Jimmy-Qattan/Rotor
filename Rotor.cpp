@@ -1,3 +1,5 @@
+#include "Rotor.h"
+
 int Rotor::pin() const {
     return (int)PIN;
 };
