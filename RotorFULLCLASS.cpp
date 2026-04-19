@@ -211,21 +211,25 @@ class Rotor {
                 GRACE_STOP = false;
                 setCurrentGrace(finalGrace);
             }
-            
-            if (abs(FINALPOSITION - POSITION) <= abs(stepSize)) {
+
+            if (inMotion && (abs(FINALPOSITION - POSITION) <= abs(stepSize))) {
+                POSITION = FINALPOSITION;
+                SERVO.write(round(POSITION));
                 inMotion = false;
+                checkToZeroStepSize();
+                checkCue();
+                return;
             }
             
             if (!SPEED || SPEED < 0) {
                 SPEED = 1000;
             };
-
-            checkCue();
-            checkToZeroStepSize();
+            
+            
             
             // ADD SERVO CURRENTPOSITION BY PARTIAL
             
-            if (FORCED_STOP || GRACE_STOP || !INITIALIZED) return; // IF SERVO IS FORCED STOP OR NOT INITIALIZED OR ON GRACE, NOTHING SHOULD HAPPEN
+            if (FORCED_STOP || GRACE_STOP || !INITIALIZED || !inMotion) return; // IF SERVO IS FORCED STOP OR NOT INITIALIZED OR ON GRACE, NOTHING SHOULD HAPPEN
             
             addValue(stepSize);
         }
