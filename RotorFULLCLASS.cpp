@@ -1,0 +1,169 @@
+class Rotor {
+    
+    uint8_t PIN;
+    float POSITION;
+    Servo SERVO;
+    String NAME;
+    bool inMotion = false;
+    bool FORCED_STOP = false;
+    bool GRACE_STOP = false;
+    int SPEED = 1000; // Determined as Time
+    
+    int currentGrace = 0;
+    int finalGrace = 1000;
+    
+    float FINALPOSITION;
+    
+    bool INITIALIZED = false;
+    
+    static inline int NUM_OF_SERVOS = 0;
+    static inline int NUM_OF_WORKING_SERVOS = 0;
+
+    public:
+    
+        Rotor(int pin, String name) : PIN((uint8_t)pin), NAME(name), INITIALIZED(true) {
+            SERVO.attach(pin);
+            
+            POSITION = (float)(SERVO.read());
+            FINALPOSITION = POSITION;
+            
+            NUM_OF_WORKING_SERVOS++;
+        };
+        
+        Rotor(int pin) : PIN((uint8_t)pin), NAME(String("Robot " + String(NUM_OF_SERVOS++))), INITIALIZED(true) {
+            SERVO.attach(pin);
+            
+            POSITION = (float)(SERVO.read());
+            FINALPOSITION = POSITION;
+            
+            NUM_OF_WORKING_SERVOS++;
+        };
+        
+        Rotor() : PIN(0), NAME(String("Robot " + String(NUM_OF_SERVOS++))), POSITION((float)(0)), INITIALIZED(false) {};
+
+        int pin() const {
+            return (int)PIN;
+        };
+        
+        float position() const {
+            return POSITION;
+        };
+        
+        void setPin(int pin) {
+            if (INITIALIZED) {
+                SERVO.detach();
+            } else {
+                INITIALIZED = true;
+                NUM_OF_WORKING_SERVOS++;
+                NUM_OF_SERVOS++;
+            }
+            
+            SERVO.attach(pin);
+        }
+        
+        void removePin() {
+            if (!INITIALIZED) return;
+            
+            SERVO.detach();
+            NUM_OF_WORKING_SERVOS--;
+        }
+        
+        void setName(String name) {
+            NAME = name;
+        };
+        
+        String getName() const {
+            return NAME;
+        };
+        
+        void setSpeed(int speed) {
+            SPEED = speed;
+        }
+        
+        int getSpeech() const {
+            return SPEED;
+        }
+        
+        // For when addValue gets called too many times in loop
+        
+        void setFinalGrace(int value) {
+            finalGrace = value;    
+        }
+        
+        void setCurrentGrace(int value) {
+            currentGrace = value;    
+        };
+        
+        int getFinalGrace() const {
+            return finalGrace;
+        };
+        
+        int getCurrentGrace() const {
+            return currentGrace;
+        };
+        
+        void beginGrace() {
+            currentGrace = 0;
+        }
+        
+        // TICK
+        
+        void addValue(float value) {
+            POSITION += value;
+            
+            POSITION = constrain(POSITION, 0, 180);
+            SERVO.write(round(POSITION));
+            
+            inMotion = true;
+            
+            
+        };
+        
+        float determineDifferential() {
+            if (abs(FINALPOSITION - POSITION) <= 0.01) beginGrace();
+            
+            return ((FINALPOSITION - POSITION) / SPEED);
+        }
+        
+        // STOP AND RESUME FUNCTIONS CRUCIAL
+        
+        void STOP() {
+            FORCED_STOP = true;
+        }
+        
+        void RESUME() {
+            FORCED_STOP = false;
+        }
+        
+        // Real real fun stuff
+        
+        void writeSpeed(float value) {
+            FINALPOSITION = value;
+        }
+        
+        void tick() {
+            
+            if (currentGrace < finalGrace) {
+                GRACE_STOP = true;
+                currentGrace++;
+            } else {
+                GRACE_STOP = false;
+                setCurrentGrace(finalGrace);
+            }
+            
+            if (POSITION == FINALPOSITION) {
+                inMotion = false;
+            }
+            
+            if (!SPEED || SPEED < 0) {
+                SPEED = 1000;
+            };
+            
+            // ADD SERVO CURRENTPOSITION BY PARTIAL
+            
+            if (FORCED_STOP || GRACE_STOP) return; // IF SERVO IS FORCED STOP, NOTHING SHOULD HAPPEN
+            
+            addValue(determineDifferential());
+            
+        }
+};
