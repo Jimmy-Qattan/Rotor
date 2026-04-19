@@ -114,7 +114,7 @@ class Rotor {
         
         // TICK
 
-        void constrainPosition(bool round = false) {
+        void constrainPosition(bool ROUND = false) {
             POSITION = constrain(POSITION, 0, 180);
             
             if (FINALPOSITION > INITIALPOSITIONSTAG) {
@@ -123,7 +123,7 @@ class Rotor {
                 POSITION = constrain(POSITION, FINALPOSITION, INITIALPOSITIONSTAG);
             }
 
-            if (round) {
+            if (ROUND) {
                 POSITION = round(POSITION);
             }
         }
