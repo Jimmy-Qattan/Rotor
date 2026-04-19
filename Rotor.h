@@ -47,8 +47,8 @@ class Rotor {
         void removePin();
         void setName(String name);
         String getName() const;
-        void setSpeed(int speed);
-        int getSpeech() const;
+        void setSpeed(int speed); // Setting the time it will take to arrive at positions via "writeSpeed"
+        int getSpeed() const; // CHANGED TO GETSPEED FIX THE OTHER FILE ASAP
         void setFinalGrace(int value);
         void setCurrentGrace(int value);
         int getFinalGrace() const;
