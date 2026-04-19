@@ -17,6 +17,8 @@ class Rotor {
     int finalGrace = 1000;
     
     float FINALPOSITION;
+
+    float INITIALPOSITIONSTAG; // Will be useful during the math in order to keep initial and final positions stagnant while current position is moving through its motion interpolation. Ideal for linear/non-linear velocities.
     
     bool INITIALIZED = false;
     
@@ -28,8 +30,7 @@ class Rotor {
         Rotor(int pin, String name) : PIN((uint8_t)pin), NAME(name), INITIALIZED(true) {
             SERVO.attach(pin);
             
-            POSITION = (float)(SERVO.read());
-            FINALPOSITION = POSITION;
+            POSITION = INITIALPOSITIONSTAG = FINALPOSITION = (float)(SERVO.read());
 
             NUM_OF_WORKING_SERVOS++;
         };
@@ -37,8 +38,7 @@ class Rotor {
         Rotor(int pin) : PIN((uint8_t)pin), NAME(String("Robot " + String(NUM_OF_SERVOS++))), INITIALIZED(true) {
             SERVO.attach(pin);
             
-            POSITION = (float)(SERVO.read());
-            FINALPOSITION = POSITION;
+            POSITION = INITIALPOSITIONSTAG = FINALPOSITION = (float)(SERVO.read());
             
             NUM_OF_WORKING_SERVOS++;
         };
@@ -111,11 +111,22 @@ class Rotor {
         }
         
         // TICK
+
+        void constrainPosition() {
+            POSITION = constrain(POSITION, 0, 180);
+            
+            if (FINALPOSITION > INITIALPOSITIONSTAG) {
+                POSITION = constrain(POSITION, INITIALPOSITIONSTAG, FINALPOSITION);
+            } else {
+                POSITION = constrain(POSITION, FINALPOSITION, INITIALPOSITIONSTAG);
+            }
+        }
         
         void addValue(float value) {
             POSITION += value;
             
-            POSITION = constrain(POSITION, 0, 180);
+            constrainPosition();
+            
             SERVO.write(round(POSITION));
             
             inMotion = true;
@@ -124,7 +135,7 @@ class Rotor {
         };
         
         float determineDifferential() {
-            if (abs(FINALPOSITION - POSITION) <= 0.01) {
+            if (abs(FINALPOSITION - POSITION) <= 0.02) {                
                 if (hasCue) {
                     writeSpeed(CUE, CUESPEED);
                     removeCue();
@@ -133,7 +144,7 @@ class Rotor {
             else {
                 beginGrace();
             }
-            return ((FINALPOSITION - POSITION) / SPEED);
+            return ((FINALPOSITION - INITIALPOSITIONSTAG) / SPEED);
         }
         
         // STOP AND RESUME FUNCTIONS CRUCIAL
@@ -174,7 +185,8 @@ class Rotor {
                 createCue(value, speed);
                 return;
             };
-            
+
+            INITIALPOSITIONSTAG = POSITION;
             FINALPOSITION = value;
             SPEED = speed;
         }
@@ -189,7 +201,7 @@ class Rotor {
                 setCurrentGrace(finalGrace);
             }
             
-            if (FINALPOSITION - POSITION <= 0.01) {
+            if (abs(FINALPOSITION - POSITION) <= 0.02) {
                 inMotion = false;
             }
             
@@ -199,7 +211,7 @@ class Rotor {
             
             // ADD SERVO CURRENTPOSITION BY PARTIAL
             
-            if (FORCED_STOP || GRACE_STOP) return; // IF SERVO IS FORCED STOP, NOTHING SHOULD HAPPEN
+            if (FORCED_STOP || GRACE_STOP || !INITIALIZED) return; // IF SERVO IS FORCED STOP OR NOT INITIALIZED OR ON GRACE, NOTHING SHOULD HAPPEN
             
             addValue(determineDifferential());
             
