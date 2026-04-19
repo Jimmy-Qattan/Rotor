@@ -52,7 +52,7 @@ class Rotor {
         void setName(String name);
         String getName() const;
         void setSpeed(int speed);
-        int getSpeech() const;
+        int getSpeed() const;
         void setFinalGrace(int value);
         void setCurrentGrace(int value);
         int getFinalGrace() const;
