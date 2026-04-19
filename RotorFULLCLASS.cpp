@@ -8,6 +8,8 @@ class Rotor {
     bool FORCED_STOP = false;
     bool GRACE_STOP = false;
     int SPEED = 1000; // Determined as Time
+
+    float stepSize = 0.0f;
     
     bool hasCue = false;
     float CUE;
@@ -112,13 +114,17 @@ class Rotor {
         
         // TICK
 
-        void constrainPosition() {
+        void constrainPosition(bool round = false) {
             POSITION = constrain(POSITION, 0, 180);
             
             if (FINALPOSITION > INITIALPOSITIONSTAG) {
                 POSITION = constrain(POSITION, INITIALPOSITIONSTAG, FINALPOSITION);
             } else {
                 POSITION = constrain(POSITION, FINALPOSITION, INITIALPOSITIONSTAG);
+            }
+
+            if (round) {
+                POSITION = round(POSITION);
             }
         }
         
@@ -130,12 +136,10 @@ class Rotor {
             SERVO.write(round(POSITION));
             
             inMotion = true;
-            
-            
         };
         
-        float determineDifferential() {
-            if (abs(FINALPOSITION - POSITION) <= 0.02) {                
+        void checkCue() {
+            if (abs(FINALPOSITION - POSITION) <= abs(stepSize)) {                
                 if (hasCue) {
                     writeSpeed(CUE, CUESPEED);
                     removeCue();
@@ -144,7 +148,6 @@ class Rotor {
             else {
                 beginGrace();
             }
-            return ((FINALPOSITION - INITIALPOSITIONSTAG) / SPEED);
         }
         
         // STOP AND RESUME FUNCTIONS CRUCIAL
@@ -185,10 +188,18 @@ class Rotor {
                 createCue(value, speed);
                 return;
             };
-
+            
             INITIALPOSITIONSTAG = POSITION;
             FINALPOSITION = value;
             SPEED = speed;
+
+            stepSize = (FINALPOSITION - INITIALPOSITIONSTAG) / SPEED;
+        }
+
+        void checkToZeroStepSize() {
+            if (inMotion) return;
+
+            stepSize = 0.0f;
         }
         
         void tick() {
@@ -201,19 +212,21 @@ class Rotor {
                 setCurrentGrace(finalGrace);
             }
             
-            if (abs(FINALPOSITION - POSITION) <= 0.02) {
+            if (abs(FINALPOSITION - POSITION) <= abs(stepSize)) {
                 inMotion = false;
             }
             
             if (!SPEED || SPEED < 0) {
                 SPEED = 1000;
             };
+
+            checkCue();
+            checkToZeroStepSize();
             
             // ADD SERVO CURRENTPOSITION BY PARTIAL
             
             if (FORCED_STOP || GRACE_STOP || !INITIALIZED) return; // IF SERVO IS FORCED STOP OR NOT INITIALIZED OR ON GRACE, NOTHING SHOULD HAPPEN
             
-            addValue(determineDifferential());
-            
+            addValue(stepSize);
         }
 };
