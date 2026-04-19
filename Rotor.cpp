@@ -39,7 +39,7 @@ void Rotor::setSpeed(int speed) {
     SPEED = speed;
 }
 
-int Rotor::getSpeech() const {
+int Rotor::getSpeed() const {
     return SPEED;
 }
 
