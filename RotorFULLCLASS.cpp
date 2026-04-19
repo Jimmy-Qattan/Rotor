@@ -14,13 +14,37 @@ class Rotor {
     float stepSize = 0.0f;
 
     bool sequenced = false;
-    bool cueFull = false;
-    int seqIndex, seqIndexCUE = 0;
+    bool sequencedRepeating = false;
+    int seqIndex = 0;
     vector<float>seqPositions = {0.0f, 180.0f};
+    vector<int>seqSpeeds = {1000, 1000};
+    int seqPositionsSize = seqPositions.size();
+    int seqSpeedsSize = seqSpeeds.size();
 
     void runSequence() {
         sequenced = true;
         // seqIndex = 0; ? (by choice)
+    };
+
+    bool incrementSequence(int customIndex = seqIndex, int value = 1) {
+
+        if (!sequenced) return;
+
+        seqIndex = customIndex;
+        
+        if (sequencedRepeating) {
+            customIndex = (customIndex + 1) % seqPositions;
+            return true;
+        } else {
+            if ((customIndex + value) <= (seqPositionsSize - 1)) {
+                customIndex += value;
+                return true;
+            } else {
+                customIndex = 0;
+                sequenced = false;
+                return false;
+            };
+        };
     };
 
     bool isSequenced() const {
@@ -32,13 +56,19 @@ class Rotor {
     };
 
     void setSequenceIndex(int value) {
-        if (inMotion) {
-            seqIndexCUE = value;
-        };
+        if (!sequenced) return;
+        writeSpeed(seqPositions[value]);
+        //incrementSequence(value); - Don't do this until after the movements are done
     };
 
     void runSequence() {
+        // Ideally, writeSpeed(seqPositions[index++], SPEED) and set the cue for the next value seqPositions[index++];
+        if (!sequenced) return;
+        if (!hasCue) {
+            hasCue = true;
+        };
         
+        writeSpeed(seqPositions[index], SPEED);    
     };
     
     bool hasCue = false;
@@ -238,6 +268,13 @@ class Rotor {
                 SERVO.write(round(POSITION));
                 inMotion = false;
                 checkToZeroStepSize();
+
+                if (incrementSequence()) {
+                    hasCue = true;
+                    CUE = seqPositions;
+                    CUESPEED = SPEED;
+                }
+                
                 checkCue();
                 return;
             }
@@ -262,8 +299,6 @@ class Rotor {
             if (!SPEED || SPEED < 0) {
                 SPEED = 1000;
             };
-            
-            
             
             // ADD SERVO CURRENTPOSITION BY PARTIAL
             
