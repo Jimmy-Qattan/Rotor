@@ -1,3 +1,5 @@
+#include <vector>
+
 class Rotor {
     
     uint8_t PIN;
@@ -10,6 +12,34 @@ class Rotor {
     int SPEED = 1000; // Determined as Time
 
     float stepSize = 0.0f;
+
+    bool sequenced = false;
+    bool cueFull = false;
+    int seqIndex, seqIndexCUE = 0;
+    vector<float>seqPositions = {0.0f, 180.0f};
+
+    void runSequence() {
+        sequenced = true;
+        // seqIndex = 0; ? (by choice)
+    };
+
+    bool isSequenced() const {
+        return sequenced;
+    };
+
+    int currentSequenceIndex() const {
+        return seqIndex;
+    };
+
+    void setSequenceIndex(int value) {
+        if (inMotion) {
+            seqIndexCUE = value;
+        };
+    };
+
+    void runSequence() {
+        
+    };
     
     bool hasCue = false;
     float CUE;
@@ -212,6 +242,10 @@ class Rotor {
                 return;
             }
         }
+
+        float getStepSize() const {
+            return stepSize;
+        };
         
         void tick() {
             
