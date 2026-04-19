@@ -96,8 +96,9 @@ void Rotor::RESUME() {
 
 // Real real fun stuff
 
-void Rotor::writeSpeed(float value) {
+void Rotor::writeSpeed(float value, int speed) {
     FINALPOSITION = value;
+    SPEED = speed;
 }
 
 void Rotor::tick() {
