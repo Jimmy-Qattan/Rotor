@@ -201,6 +201,17 @@ class Rotor {
 
             stepSize = 0.0f;
         }
+
+        void PROCEDURAL_FINAL_CHECK() {
+            if (inMotion && (abs(FINALPOSITION - POSITION) <= abs(stepSize))) {
+                POSITION = FINALPOSITION;
+                SERVO.write(round(POSITION));
+                inMotion = false;
+                checkToZeroStepSize();
+                checkCue();
+                return;
+            }
+        }
         
         void tick() {
             
@@ -212,14 +223,7 @@ class Rotor {
                 setCurrentGrace(finalGrace);
             }
 
-            if (inMotion && (abs(FINALPOSITION - POSITION) <= abs(stepSize))) {
-                POSITION = FINALPOSITION;
-                SERVO.write(round(POSITION));
-                inMotion = false;
-                checkToZeroStepSize();
-                checkCue();
-                return;
-            }
+            PROCEDURAL_FINAL_CHECK();
             
             if (!SPEED || SPEED < 0) {
                 SPEED = 1000;
