@@ -148,10 +148,10 @@ class Rotor {
             inMotion = true;
         };
         
-        void checkCue() {
+        void checkCue(bool sequenced = false) {
             if (abs(FINALPOSITION - POSITION) <= abs(stepSize)) {                
                 if (hasCue) {
-                    writeSpeed(CUE, CUESPEED);
+                    writeSpeed(CUE, CUESPEED, sequenced);
                     removeCue();
                 }
             }
@@ -189,12 +189,23 @@ class Rotor {
         void executeCue() {
             if (!hasCue || inMotion) return;
             
-            writeSpeed(CUE, CUESPEED);
+            writeSpeed(CUE, CUESPEED, true);
             removeCue();
         }
+
+        void interruptSequenceABRUPT() {
+            if (!sequenced) return;
+            
+            pauseSequence();
+            seqIndex = 0;
+        }
         
-        void writeSpeed(float value, int speed) {
+        void writeSpeed(float value, int speed, bool isSequence = false) {
             if (inMotion) {
+                if (sequenced && !isSequence) {
+                    interruptSequenceABRUPT();
+                }
+                
                 createCue(value, speed);
                 return;
             };
@@ -221,11 +232,13 @@ class Rotor {
 
                 if (incrementSequence()) {
                     hasCue = true;
-                    CUE = seqPositions;
-                    CUESPEED = SPEED;
+                    CUE = seqPositions[seqIndex];
+                    CUESPEED = seqSpeeds[seqIndex];
+                    checkCue(true);
+                } else {
+                    checkCue();
                 }
                 
-                checkCue();
                 return;
             }
         }
@@ -238,24 +251,28 @@ class Rotor {
 
         void runSequence() {
             sequenced = true;
-            // seqIndex = 0; ? (by choice)
         };
 
+        void pauseSequence() {
+            sequenced = false;
+        }
+
         bool setSeqPositions(const vector<float> arr) {
-            if (inMotion && !sequenced) return false;
+            if (!arr.size()) return false;
             
             seqPositions.clear();
             for (float value : arr) {
                 seqPositions.push_back(value);
             };
-        
+
+            seqIndex = 0;
             seqPositionsSize = seqPositions.size();
             return true;
         };
         
-        bool setSeqSpeeds(const vector<float> arr) {
-            if (inMotion && !sequenced) return false;
-        
+        bool setSeqSpeeds(const vector<float> arr) {  
+            if (!arr.size() || arr.size() != seqPositions.size()) return false;
+            
             seqSpeeds.clear();
             for (float value : arr) {
                 seqSpeeds.push_back(value);
@@ -265,21 +282,19 @@ class Rotor {
             return true;
         };
         
-        bool incrementSequence(int customIndex = seqIndex, int value = 1) {
+        bool incrementSequence(int value = 1) {
         
-            if (!sequenced) return;
-        
-            seqIndex = customIndex;
+            if (!sequenced) return false;
             
             if (sequencedRepeating) {
-                customIndex = (customIndex + 1) % seqPositions;
+                seqIndex = (seqIndex + 1) % seqPositions;
                 return true;
             } else {
-                if ((customIndex + value) <= (seqPositionsSize - 1)) {
-                    customIndex += value;
+                if ((seqIndex + value) <= (seqPositionsSize - 1)) {
+                    seqIndex += value;
                     return true;
                 } else {
-                    customIndex = 0;
+                    seqIndex = 0;
                     sequenced = false;
                     return false;
                 };
@@ -296,7 +311,7 @@ class Rotor {
         
         void setSequenceIndex(int value) {
             if (!sequenced) return;
-            writeSpeed(seqPositions[value]);
+            writeSpeed(seqPositions[value], seqSpeeds[value], true);
             //incrementSequence(value); - Don't do this until after the movements are done
         };
         
@@ -307,7 +322,7 @@ class Rotor {
                 hasCue = true;
             };
             
-            writeSpeed(seqPositions[index], SPEED);    
+            writeSpeed(seqPositions[seqIndex], seqSpeeds[seqIndex], true);    
         };
         
         void tick() {
